@@ -6,6 +6,106 @@
 
 ## 构建问题
 
+### Rust 版本错误："feature 'edition2024' is required"
+
+**问题描述：**
+在构建 Pake 或使用 CLI 时，遇到如下错误：
+
+```txt
+error: failed to parse manifest
+Caused by:
+  feature `edition2024` is required
+  this Cargo does not support nightly features, but if you switch to nightly channel you can add `cargo-features = ["edition2024"]`
+  to enable this feature
+```
+
+**原因分析：**
+
+Pake 的依赖项需要 Rust edition2024 支持，该特性仅在 Rust 1.85.0 或更高版本中可用。具体来说：
+
+- 依赖链包括：`tauri` → `image` → `moxcms` → `pxfm v0.1.25`（需要 edition2024）
+- Rust edition2024 在 Rust 1.85.0（2025 年 2 月发布）中成为稳定版
+- 如果您的 Rust 版本较旧（例如 2024 年 8 月的 1.82.0），就会看到此错误
+
+**解决方案：**
+
+将 Rust 工具链更新到 1.85.0 或更高版本：
+
+```bash
+# 更新到最新稳定版 Rust
+rustup update stable
+
+# 或者安装最新稳定版
+rustup install stable
+
+# 验证更新
+rustc --version
+# 应显示：rustc 1.85.0 或更高版本
+```
+
+更新后，重新执行构建命令。
+
+**对于开发环境设置：**
+
+如果您正在设置开发环境，请确保：
+
+- Rust ≥1.85.0（使用 `rustc --version` 检查）
+- Node.js ≥22.0.0（使用 `node --version` 检查）
+
+详见 [CONTRIBUTING.md](../CONTRIBUTING.md) 获取完整的前置条件。
+
+---
+
+### Windows：首次构建时安装超时
+
+**问题描述：**
+在 Windows 上首次构建时，可能遇到：
+
+```txt
+Error: Command timed out after 900000ms: "cd ... && pnpm install"
+```
+
+**原因分析：**
+
+Windows 首次安装可能较慢，原因包括：
+
+- 本地模块编译（需要 Visual Studio Build Tools）
+- 大量依赖下载（Tauri、Rust 工具链）
+- Windows Defender 实时扫描
+- 网络连接问题
+
+**解决方案 1：自动重试（内置）**
+
+Pake CLI 现在会在初次安装超时后自动使用国内镜像重试。只需等待重试完成即可。
+
+**解决方案 2：手动安装依赖**
+
+如果自动重试失败，可手动安装依赖：
+
+```bash
+# 进入 pake-cli 安装目录
+cd %LOCALAPPDATA%\pnpm\global\5\.pnpm\pake-cli@版本号\node_modules\pake-cli
+
+# 使用国内镜像安装
+pnpm install --registry=https://registry.npmmirror.com
+
+# 然后重新构建
+pake https://github.com --name GitHub
+```
+
+**解决方案 3：改善网络环境**
+
+- 使用稳定的网络连接
+- 安装过程中临时关闭杀毒软件
+- 必要时使用 VPN 或代理
+
+**预期时间：**
+
+- 首次安装：Windows 上需要 10-15 分钟
+- 后续构建：依赖已缓存，速度会快很多
+
+---
+
 ### Linux：AppImage 构建失败，提示 "failed to run linuxdeploy"
 
 **问题描述：**

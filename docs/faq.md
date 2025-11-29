@@ -6,6 +6,106 @@ Common issues and solutions when using Pake.
 
 ## Build Issues
 
+### Rust Version Error: "feature 'edition2024' is required"
+
+**Problem:**
+When building Pake or using the CLI, you encounter an error like:
+
+```txt
+error: failed to parse manifest
+Caused by:
+  feature `edition2024` is required
+  this Cargo does not support nightly features, but if you switch to nightly channel you can add `cargo-features = ["edition2024"]`
+  to enable this feature
+```
+
+**Why This Happens:**
+
+Pake's dependencies require Rust edition2024 support, which is only available in Rust 1.85.0 or later. Specifically:
+
+- The dependency chain includes: `tauri` → `image` → `moxcms` → `pxfm v0.1.25` (requires edition2024)
+- Rust edition2024 became stable in Rust 1.85.0 (released February 2025)
+- If your Rust version is older (e.g., 1.82.0 from August 2024), you'll see this error
+
+**Solution:**
+
+Update your Rust toolchain to version 1.85.0 or later:
+
+```bash
+# Update to the latest stable Rust version
+rustup update stable
+
+# Or install the latest stable version
+rustup install stable
+
+# Verify the update
+rustc --version
+# Should show: rustc 1.85.0 or higher
+```
+
+After updating, retry your build command.
+
+**For Development Setup:**
+
+If you're setting up a development environment, ensure:
+
+- Rust ≥1.85.0 (check with `rustc --version`)
+- Node.js ≥22.0.0 (check with `node --version`)
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for complete prerequisites.
+
+---
+
+### Windows: Installation Timeout During First Build
+
+**Problem:**
+When building for the first time on Windows, you may encounter:
+
+```txt
+Error: Command timed out after 900000ms: "cd ... && pnpm install"
+```
+
+**Why This Happens:**
+
+First-time installation on Windows can be slow due to:
+
+- Native module compilation (requires Visual Studio Build Tools)
+- Large dependency downloads (Tauri, Rust toolchain)
+- Windows Defender real-time scanning
+- Network connectivity issues
+
+**Solution 1: Automatic Retry (Built-in)**
+
+Pake CLI now automatically retries with CN mirror if the initial installation times out. Simply wait for the retry to complete.
+
+**Solution 2: Manual Installation**
+
+If automatic retry fails, manually install dependencies:
+
+```bash
+# Navigate to pake-cli installation directory
+cd %LOCALAPPDATA%\pnpm\global\5\.pnpm\pake-cli@VERSION\node_modules\pake-cli
+
+# Install with CN mirror
+pnpm install --registry=https://registry.npmmirror.com
+
+# Then retry your build
+pake https://github.com --name GitHub
+```
+
+**Solution 3: Improve Network Speed**
+
+- Use a stable network connection
+- Temporarily disable antivirus software during installation
+- Use a VPN or proxy if needed
+
+**Expected Time:**
+
+- First installation: 10-15 minutes on Windows
+- Subsequent builds: Much faster (dependencies cached)
+
+---
+
 ### Linux: AppImage Build Fails with "failed to run linuxdeploy"
 
 **Problem:**
